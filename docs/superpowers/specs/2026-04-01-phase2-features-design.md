@@ -119,3 +119,75 @@ When the user taps SOS, find the nearest police station and provide a one-tap ca
 - Real-time police station data fetching (rejected for latency reasons — emergencies need instant response)
 - Danger zone user reporting (future feature)
 - Turn-by-turn navigation within Saathi (delegated to Google Maps)
+  Project: Saathi — Women's Safety App
+
+  Starting point: A React + Vite app with Leaflet maps, basic single-input routing via Leaflet Routing Machine, and Supabase integration (empty tables).
+
+  ---
+  Phase 1: Safe Route Navigation Overhaul
+
+  UI Changes:
+  - Replaced single search box with two inputs — "From" (green, auto-filled with GPS/reverse-geocoded address) and "To" (violet)
+  - Removed confusing "Set" button on the From field
+  - Added route color coding — green (safest), violet (shortest), dimmed violet (alternatives)
+  - Added route legend (bottom-left) explaining colors
+  - Added RouteInfo panel (top-right) showing travel time/distance on route click
+  - Made alternative routes clickable — clicking swaps skull markers and highlights the clicked route
+  - Added "Show Safe Route" button to reset back to default view
+  - Mobile-responsive RouteInfo — compact on phone/tablet, full details on desktop
+
+  Routing Engine Rewrite:
+  - Removed Leaflet Routing Machine entirely — it was interfering with custom rendering and its default layers couldn't be reliably removed
+  - Call OSRM API directly via fetch() with manual polyline decoding
+  - Built custom alternative route generation — OSRM's public server rarely returns alternatives for short routes in Kerala, so we generate avoidance
+  waypoints pushed away from danger zones and request routes through them
+  - Fixed walking time — OSRM's public server returns driving speeds even for the foot profile, so we calculate time from distance at 5 km/h
+
+  Danger Zone Markers:
+  - Red skull (💀) markers on danger zones along the selected route
+  - Click for label and radius popup
+  - Skull markers swap when clicking different routes
+
+  Problems Solved:
+  1. Single search box confusion → dual inputs
+  2. OSRM not returning alternatives → custom waypoint-based route generation
+  3. LRM interfering with rendering → removed, direct OSRM API
+  4. React strict mode aborting fetches → ref pattern for callbacks
+  5. Danger zone markers not appearing → parallel fetch with Promise.all
+  6. Supabase RLS blocking reads → added SELECT policies for anon role
+  7. Geolocation denied in WSL → Aluva fallback coordinates
+
+  ---
+  Phase 2: Google Maps, SOS Call, Real Data
+
+  Real Police Station Data:
+  - Queried OpenStreetMap (Nominatim) for real police stations in Aluva/Ernakulam
+  - Cleaned up duplicates (48 rows → 10 real stations) in Supabase
+  - Phone numbers default to "112" (India emergency) where unavailable
+
+  Navigate in Google Maps:
+  - Added "Navigate in Google Maps" button to RouteInfo
+  - Builds URL with 3 intermediate waypoints extracted from the selected route's coordinates
+  - Forces Google Maps to follow approximately the same path
+
+  SOS Call Enhancement:
+  - Prominent "Call Now" button with tel: link
+  - Phone number displayed as text
+  - 112 emergency fallback when station phone is unavailable or no stations found
+  - React portal — SOS modal renders on document.body outside #root
+  - Full-page blur — entire app blurs with smooth transition when SOS is active
+
+  ---
+  Documentation & Repo Hygiene
+
+  - Public README.md — clean, shows only features, tech stack, setup, routing overview
+  - Internal README — full debugging history, problems & solutions, saved to docs/superpowers/README-internal.md
+  - Design spec — docs/superpowers/specs/2026-04-01-phase2-features-design.md
+  - Implementation plan — docs/superpowers/plans/2026-04-01-phase2-features.md
+  - docs/superpowers/ added to .gitignore — internal docs stay private
+
+  ---
+  Commits
+
+  1. 48e1c5f — Phase 2 features (Google Maps, SOS call, walking time, real data)
+  2. 3ceca8d — Trim public README, gitignore internal docs

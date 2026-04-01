@@ -16,7 +16,7 @@ export default function RouteLegend() {
           <span className="text-zinc-500">Alternative</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-base">💀</span>
+          <span className="text-base font-bold text-red-500">✕</span>
           <span className="text-red-400">Danger Zone</span>
         </div>
       </div>

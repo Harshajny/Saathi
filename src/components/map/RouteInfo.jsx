@@ -62,7 +62,7 @@ export default function RouteInfo({ info, onShowSafest }) {
         {info.dangerCount > 0 ? (
           <div>
             <div className="text-red-400 font-semibold text-xs flex items-center gap-1 mb-1">
-              <span>💀</span> {info.dangerCount} danger zone{info.dangerCount !== 1 ? 's' : ''} nearby
+              <span className="font-bold">✕</span> {info.dangerCount} danger zone{info.dangerCount !== 1 ? 's' : ''} nearby
             </div>
             <ul className="text-zinc-500 text-xs space-y-0.5 max-h-32 overflow-y-auto">
               {info.dangerZones.map((name, i) => (

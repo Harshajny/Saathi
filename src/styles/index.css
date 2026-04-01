@@ -36,8 +36,8 @@ body {
   filter: hue-rotate(100deg) saturate(1.5) brightness(1.1);
 }
 
-/* Danger zone skull marker */
-.danger-skull-marker {
+/* Danger zone marker */
+.danger-marker {
   background: none !important;
   border: none !important;
 }
@@ -45,11 +45,6 @@ body {
 /* Violet-tinted marker */
 .violet-marker {
   filter: hue-rotate(220deg) saturate(1.5) brightness(1.1);
-}
-
-/* Hide leaflet routing machine's default itinerary panel */
-.leaflet-routing-container {
-  display: none !important;
 }
 
 @keyframes glow-pulse {

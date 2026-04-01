@@ -83,7 +83,6 @@ export default function MapContainer() {
   const [destination, setDestination] = useState(null)
   const [fromQuery, setFromQuery] = useState('')
   const [toQuery, setToQuery] = useState('')
-  const [searchingFrom, setSearchingFrom] = useState(false)
   const [searchingTo, setSearchingTo] = useState(false)
   const [selectedRouteInfo, setSelectedRouteInfo] = useState(null)
   const resetToSafestRef = useRef(null)
@@ -110,14 +109,12 @@ export default function MapContainer() {
         setFromPos(coords)
         const address = await reverseGeocode(coords.lat, coords.lng)
         setFromQuery(address)
-        console.log('[Saathi] GPS location:', coords)
       },
       () => {
         // Geolocation denied — use Aluva as fallback
         setUserPos(fallback)
         setFromPos(fallback)
         setFromQuery('Aluva, Ernakulam, Kerala')
-        console.log('[Saathi] Geolocation denied, using Aluva fallback')
       }
     )
   }, [])
@@ -125,17 +122,11 @@ export default function MapContainer() {
   const handleFromSearch = async (e) => {
     e.preventDefault()
     if (!fromQuery.trim()) return
-    setSearchingFrom(true)
     try {
       const result = await forwardGeocode(fromQuery)
-      if (result) {
-        setFromPos(result)
-        console.log('[Saathi] From set to:', result)
-      }
-    } catch (err) {
-      console.error('From geocoding failed:', err)
-    } finally {
-      setSearchingFrom(false)
+      if (result) setFromPos(result)
+    } catch {
+      // geocoding failed silently
     }
   }
 
@@ -145,12 +136,9 @@ export default function MapContainer() {
     setSearchingTo(true)
     try {
       const result = await forwardGeocode(toQuery)
-      if (result) {
-        setDestination(result)
-        console.log('[Saathi] Destination set to:', result)
-      }
-    } catch (err) {
-      console.error('To geocoding failed:', err)
+      if (result) setDestination(result)
+    } catch {
+      // geocoding failed silently
     } finally {
       setSearchingTo(false)
     }

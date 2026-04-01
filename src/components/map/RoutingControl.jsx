@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
-import { fetchDangerZones, filterSafestRoute } from '../../lib/dangerZones'
+import { fetchDangerZones, filterSafestRoute, getDangerZonesOnRoute } from '../../lib/dangerZones'
 import { haversineMetres } from '../../lib/geo'
 
 const GREEN = '#22C55E'
 const VIOLET = '#8B5CF6'
 const VIOLET_DIM = 'rgba(139,92,246,0.6)'
 
-const skullIcon = L.divIcon({
-  html: '<span style="font-size:24px;filter:drop-shadow(0 0 4px rgba(239,68,68,0.8));">💀</span>',
-  className: 'danger-skull-marker',
+const dangerIcon = L.divIcon({
+  html: '<span style="font-size:20px;font-weight:bold;color:#EF4444;">✕</span>',
+  className: 'danger-marker',
   iconSize: [24, 24],
   iconAnchor: [12, 12],
   popupAnchor: [0, -14],
@@ -69,32 +69,16 @@ function decodePolyline(encoded) {
   return coords
 }
 
-function getDangerZonesOnRoute(routeCoords, dangerZones, thresholdMetres = 500) {
-  const matched = []
-  for (const zone of dangerZones) {
-    for (const pt of routeCoords) {
-      if (haversineMetres(pt.lat, pt.lng, zone.lat, zone.lng) <= thresholdMetres) {
-        matched.push(zone)
-        break
-      }
-    }
-  }
-  return matched
-}
-
 async function fetchOSRMRoute(waypoints, signal) {
   const coordStr = waypoints.map((w) => `${w.lng},${w.lat}`).join(';')
   const url = `https://router.project-osrm.org/route/v1/foot/${coordStr}?overview=full&geometries=polyline`
-  console.log('[Saathi] Fetching OSRM:', url)
   const res = await fetch(url, { signal })
   const data = await res.json()
-  console.log('[Saathi] OSRM response:', data.code, data.routes?.length, 'routes')
   if (!data.routes || data.routes.length === 0) return null
   const r = data.routes[0]
   return {
     coordinates: decodePolyline(r.geometry),
     distance: r.distance,
-    duration: r.duration,
   }
 }
 
@@ -139,7 +123,7 @@ function generateAvoidanceWaypoints(from, to, dangerZones) {
 export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
   const map = useMap()
   const layerGroupRef = useRef(L.layerGroup())
-  const skullLayerRef = useRef(L.layerGroup())
+  const dangerLayerRef = useRef(L.layerGroup())
   const abortRef = useRef(null)
   const onRouteSelectRef = useRef(onRouteSelect)
   onRouteSelectRef.current = onRouteSelect
@@ -155,11 +139,9 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
     layerGroupRef.current = L.layerGroup()
     layerGroupRef.current.addTo(map)
 
-    skullLayerRef.current.remove()
-    skullLayerRef.current = L.layerGroup()
-    skullLayerRef.current.addTo(map)
-
-    console.log('[Saathi] RoutingControl effect running', { from, to })
+    dangerLayerRef.current.remove()
+    dangerLayerRef.current = L.layerGroup()
+    dangerLayerRef.current.addTo(map)
 
     async function run() {
       try {
@@ -168,18 +150,8 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           fetchOSRMRoute([from, to], controller.signal),
         ])
 
-        if (controller.signal.aborted) {
-          console.log('[Saathi] Aborted after initial fetch')
-          return
-        }
-
-        if (!directRoute) {
-          console.error('[Saathi] No direct route returned from OSRM')
-          return
-        }
-
-        console.log('[Saathi] Direct route fetched:', directRoute.distance, 'm')
-        console.log('[Saathi] Danger zones:', dangerZones.length)
+        if (controller.signal.aborted) return
+        if (!directRoute) return
 
         const avoidWaypoints = generateAvoidanceWaypoints(from, to, dangerZones)
 
@@ -198,29 +170,24 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           }
         })
 
-        console.log('[Saathi] Total routes to display:', allRoutes.length)
-
         const routesForFilter = allRoutes.map((r) => ({ coordinates: r.coordinates }))
         const safestIdx = filterSafestRoute(routesForFilter, dangerZones)
         const shortestIdx = findShortestIndex(allRoutes)
-
-        console.log('[Saathi] Safest: route', safestIdx, '| Shortest: route', shortestIdx)
 
         // Pre-compute danger zones for each route
         const dangersPerRoute = allRoutes.map((r) =>
           getDangerZonesOnRoute(r.coordinates, dangerZones)
         )
 
-        // Helper to show skull markers for a given route index
-        function showSkullsForRoute(routeIdx) {
-          skullLayerRef.current.clearLayers()
+        function showDangerMarkers(routeIdx) {
+          dangerLayerRef.current.clearLayers()
           dangersPerRoute[routeIdx].forEach((zone) => {
-            const marker = L.marker([zone.lat, zone.lng], { icon: skullIcon })
+            const marker = L.marker([zone.lat, zone.lng], { icon: dangerIcon })
             marker.bindPopup(
               `<div style="color:#EF4444;font-weight:bold;">⚠ ${zone.label}</div>
                <div style="color:#999;font-size:12px;">Danger radius: ${zone.radius_m}m</div>`
             )
-            skullLayerRef.current.addLayer(marker)
+            dangerLayerRef.current.addLayer(marker)
           })
         }
 
@@ -301,8 +268,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
               fromCoords: from,
               toCoords: to,
             })
-            // Swap skull markers to show this route's dangers
-            showSkullsForRoute(i)
+            showDangerMarkers(i)
           })
 
           layerGroupRef.current.addLayer(line)
@@ -321,7 +287,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
               line.setStyle({ color: originalColor, weight: 5, opacity: 0.65 })
             }
           })
-          showSkullsForRoute(safestIdx)
+          showDangerMarkers(safestIdx)
           onRouteSelectRef.current({
             label: 'Safest Route',
             time: formatTime(walkingTimeSeconds(allRoutes[safestIdx].distance)),
@@ -338,10 +304,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
         // Expose reset function via ref
         if (resetRef) resetRef.current = resetToSafest
 
-        // Initially show skulls for the safest route
-        showSkullsForRoute(safestIdx)
-
-        console.log('[Saathi] Danger zones on safest route:', dangersPerRoute[safestIdx].length)
+        showDangerMarkers(safestIdx)
 
         // Fit map to safest route
         const safestLatLngs = allRoutes[safestIdx].coordinates.map((c) => [c.lat, c.lng])
@@ -360,19 +323,16 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           toCoords: to,
         })
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('[Saathi] Routing error:', err)
-        }
+        if (err.name !== 'AbortError') console.error('[Saathi] Routing error:', err)
       }
     }
 
     run()
 
     return () => {
-      console.log('[Saathi] RoutingControl cleanup')
       controller.abort()
       layerGroupRef.current.remove()
-      skullLayerRef.current.remove()
+      dangerLayerRef.current.remove()
     }
   }, [map, from, to])
 

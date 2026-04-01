@@ -13,9 +13,6 @@ export default function Header() {
         <Link to="/map" className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">
           Map
         </Link>
-        <Link to="/report" className="text-sm text-zinc-400 hover:text-violet-400 transition-colors">
-          Report
-        </Link>
         <SOSButton />
       </nav>
     </header>

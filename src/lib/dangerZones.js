@@ -22,19 +22,19 @@ export async function fetchDangerZones() {
 }
 
 /**
- * Count how many danger zones fall within `thresholdMetres` of any point on a route.
+ * Return danger zones that fall within `thresholdMetres` of any point on a route.
  */
-function countDangersOnRoute(routeCoords, dangerZones, thresholdMetres = 500) {
-  let count = 0
+export function getDangerZonesOnRoute(routeCoords, dangerZones, thresholdMetres = 500) {
+  const matched = []
   for (const zone of dangerZones) {
     for (const pt of routeCoords) {
       if (haversineMetres(pt.lat, pt.lng, zone.lat, zone.lng) <= thresholdMetres) {
-        count++
+        matched.push(zone)
         break
       }
     }
   }
-  return count
+  return matched
 }
 
 /**
@@ -48,7 +48,7 @@ export function filterSafestRoute(routes, dangerZones) {
 
   routes.forEach((route, i) => {
     const coords = route.coordinates || []
-    const dangerCount = countDangersOnRoute(coords, dangerZones)
+    const dangerCount = getDangerZonesOnRoute(coords, dangerZones).length
     if (dangerCount < bestCount) {
       bestCount = dangerCount
       bestIndex = i

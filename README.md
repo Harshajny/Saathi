@@ -10,7 +10,7 @@ A women's safety application that provides real-time safe routing, instant SOS a
 - **Shortest route (violet)** — The fastest route by distance, shown in violet.
 - **Alternative routes** — Additional routes shown for comparison.
 - **Click any route** to see estimated walking time and distance.
-- **Danger zone markers** — Skull markers on the map for danger zones along the selected route. Click for details.
+- **Danger zone markers** — Red ✕ markers on the map for danger zones along the selected route. Click for details.
 - **Navigate in Google Maps** — Open any selected route in Google Maps with waypoints for turn-by-turn navigation.
 
 ### SOS Emergency Button

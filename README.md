@@ -27,48 +27,6 @@ A women's safety application that provides real-time safe routing, instant SOS a
 - **Backend:** Supabase (PostgreSQL)
 - **Navigation:** Google Maps Directions URL with waypoint support
 
-## Setup
-
-1. Clone the repo and install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Create a `.env` file with your Supabase credentials:
-   ```
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
-   ```
-
-3. Create the `danger_zones` and `police_stations` tables in Supabase:
-
-   **danger_zones:**
-   | Column | Type | Description |
-   |--------|------|-------------|
-   | `id` | `bigint` (auto) | Primary key |
-   | `lat` | `double precision` | Latitude |
-   | `lng` | `double precision` | Longitude |
-   | `label` | `text` | Description |
-   | `radius_m` | `integer` | Danger radius in metres |
-
-   **police_stations:**
-   | Column | Type | Description |
-   |--------|------|-------------|
-   | `id` | `bigint` (auto) | Primary key |
-   | `name` | `text` | Station name |
-   | `lat` | `double precision` | Latitude |
-   | `lng` | `double precision` | Longitude |
-   | `phone` | `text` | Contact phone number |
-
-4. Enable Row Level Security with public read access on both tables.
-
-5. Seed the tables with data for your area.
-
-6. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-
 ## How Safe Routing Works
 
 1. User enters a destination in the "To" field.

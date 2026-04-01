@@ -5,49 +5,27 @@ A women's safety application that provides real-time safe routing, instant SOS a
 ## Features
 
 ### Safe Route Navigation
-- **From / To inputs** — "From" auto-fills with your current GPS location (reverse-geocoded to a readable address). Both fields are editable. Press Enter to search a new "From" location.
-- **Safest route (green)** — The route that passes through the fewest danger zones, highlighted in bright green with a glow effect.
-- **Shortest route (violet)** — The fastest route by distance, shown in violet. If the safest route is also the shortest, it displays as green only.
-- **Alternative routes (dimmed violet)** — Alternative routes generated via avoidance waypoints, shown for reference.
-- **Click any route** to see its estimated travel time and distance in the top-right corner.
-- **Danger zone markers (red skulls)** — Skull markers (💀) on the map for danger zones along the safest route. Click for label and radius details.
-- **Route legend** — Bottom-left overlay explaining what each color means.
-- **Navigate in Google Maps** — click the button on any selected route to open it in Google Maps with waypoints, following approximately the same path.
+- **From / To inputs** — "From" auto-fills with your current GPS location. Both fields are editable.
+- **Safest route (green)** — The route with the fewest nearby danger zones, highlighted in bright green.
+- **Shortest route (violet)** — The fastest route by distance, shown in violet.
+- **Alternative routes** — Additional routes shown for comparison.
+- **Click any route** to see estimated walking time and distance.
+- **Danger zone markers** — Skull markers on the map for danger zones along the selected route. Click for details.
+- **Navigate in Google Maps** — Open any selected route in Google Maps with waypoints for turn-by-turn navigation.
 
 ### SOS Emergency Button
 - One-tap SOS button in the header.
-- Finds the nearest police station from the Supabase database (real OpenStreetMap data).
-- Shows station name, distance, and phone number.
-- **"Call Now" button** — uses `tel:` to open the phone dialer directly. Falls back to India's emergency number (112) if station phone is unavailable or no stations are found.
+- Finds the nearest police station instantly.
+- **"Call Now" button** — opens the phone dialer directly. Falls back to India's emergency number (112) if needed.
 
 ## Tech Stack
 
 - **Frontend:** React 18, Vite, Tailwind CSS
 - **Mapping:** Leaflet, React Leaflet
-- **Routing:** OSRM public API (pedestrian profile), called directly via `fetch`
-- **Geocoding:** Nominatim (OpenStreetMap) for forward and reverse geocoding
+- **Routing:** OSRM public API (pedestrian profile)
+- **Geocoding:** Nominatim (OpenStreetMap)
 - **Backend:** Supabase (PostgreSQL)
 - **Navigation:** Google Maps Directions URL with waypoint support
-
-## Supabase Tables
-
-### `danger_zones`
-| Column     | Type              | Description                    |
-|------------|-------------------|--------------------------------|
-| `id`       | `bigint` (auto)   | Primary key                    |
-| `lat`      | `double precision` | Latitude                      |
-| `lng`      | `double precision` | Longitude                     |
-| `label`    | `text`            | Description of the danger zone |
-| `radius_m` | `integer`         | Danger radius in metres        |
-
-### `police_stations`
-| Column | Type              | Description              |
-|--------|-------------------|--------------------------|
-| `id`   | `bigint` (auto)   | Primary key              |
-| `name` | `text`            | Station name             |
-| `lat`  | `double precision` | Latitude                 |
-| `lng`  | `double precision` | Longitude                |
-| `phone`| `text`            | Contact phone number     |
 
 ## Setup
 
@@ -62,109 +40,45 @@ A women's safety application that provides real-time safe routing, instant SOS a
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-3. Create the `danger_zones` and `police_stations` tables in Supabase (see schema above).
+3. Create the `danger_zones` and `police_stations` tables in Supabase:
 
-4. Seed the tables with danger zone and police station data for your area.
+   **danger_zones:**
+   | Column | Type | Description |
+   |--------|------|-------------|
+   | `id` | `bigint` (auto) | Primary key |
+   | `lat` | `double precision` | Latitude |
+   | `lng` | `double precision` | Longitude |
+   | `label` | `text` | Description |
+   | `radius_m` | `integer` | Danger radius in metres |
 
-5. Start the dev server:
+   **police_stations:**
+   | Column | Type | Description |
+   |--------|------|-------------|
+   | `id` | `bigint` (auto) | Primary key |
+   | `name` | `text` | Station name |
+   | `lat` | `double precision` | Latitude |
+   | `lng` | `double precision` | Longitude |
+   | `phone` | `text` | Contact phone number |
+
+4. Enable Row Level Security with public read access on both tables.
+
+5. Seed the tables with data for your area.
+
+6. Start the dev server:
    ```bash
    npm run dev
    ```
 
-## Seed Data Disclaimer
-
-- **Danger zones:** The danger zone data is **fictional and for testing purposes only**. The coordinates are placed at approximate locations in Aluva, Ernakulam to simulate realistic routing scenarios. Labels (e.g., "Aluva Railway Underpass - Poor Lighting") are invented with no actual crime or safety data behind them. For production use, real data should be sourced from state crime records, crowdsourced user reports, or government open data portals (e.g., National Crime Records Bureau).
-- **Police stations:** Sourced from OpenStreetMap (Nominatim) with real coordinates. Phone numbers default to "112" (India's national emergency number) where station-specific numbers are unavailable in OSM data.
-
 ## How Safe Routing Works
 
-1. User enters a destination in the "To" field (the "From" field is auto-filled with the current GPS location via reverse geocoding).
-2. The app calls the OSRM public API directly to get a **direct pedestrian route**.
-3. All danger zones are fetched from Supabase (cached per session).
-4. **Avoidance waypoints** are generated by calculating midpoints pushed away from nearby danger zones (or perpendicular to the route if no danger zones are nearby). These waypoints are used to request 2 additional alternative routes from OSRM.
-5. Each route is scored by counting how many danger zones fall within **500m** of any point on its path.
-6. The route with the fewest nearby danger zones is highlighted as the **safest route** in green.
-7. The shortest route by total distance is shown in violet.
-8. Danger zones along the safest route are marked with red skull (💀) pins that show label and radius on click.
+1. User enters a destination in the "To" field.
+2. The app fetches a direct pedestrian route from OSRM.
+3. Danger zones are fetched from Supabase.
+4. Alternative routes are generated using avoidance waypoints that steer around danger zones.
+5. Each route is scored by counting nearby danger zones (within 500m).
+6. The safest route is highlighted in green, the shortest in violet.
+7. Walking time is calculated at 5 km/h average speed.
 
-## Problems Encountered & Solutions
+## License
 
-### 1. Single Search Box Was Confusing
-
-**Problem:** The original UI had only one text input for the destination. The starting point was silently set to the user's GPS location with no visual indication. Users had no way to know where the route started from or change it.
-
-**Solution:** Replaced the single input with two clearly labeled fields — "From" (green-bordered) and "To" (violet-bordered). The "From" field is auto-populated with the user's current GPS address via Nominatim reverse geocoding. Both fields are editable, and submitting either triggers a geocode lookup to update the route. The original "Set" button on the "From" field was later removed as it was confusing — pressing Enter now triggers the search.
-
-### 2. OSRM Alternatives Not Returning Multiple Routes
-
-**Problem:** The initial implementation used Leaflet Routing Machine (LRM) with `alternatives: true` to request multiple routes from OSRM. However, testing revealed that **OSRM's public server almost never returns alternative routes for short-to-medium distances**, especially in areas like Kerala where the road network is largely linear without many parallel roads. Even setting `alternatives: 3` and testing routes of varying lengths (2km to 85km) within Kerala, OSRM consistently returned only 1 route. Alternatives only appeared for very long inter-city routes (e.g., Kochi to Thrissur at 85km).
-
-**What we tested:**
-```
-Aluva Railway Station → UC College (2.8km)     → 1 route
-Aluva → Kalamassery (7km)                       → 1 route
-Aluva → Edappally (12km)                        → 1 route
-Aluva → Angamaly (13.5km)                       → 1 route
-Kochi → Thrissur (85km)                          → 2 routes ✓
-```
-
-**Solution:** Removed the dependency on OSRM's built-in alternative route generation entirely. Instead, the app now **generates its own alternative routes** by:
-1. Fetching a direct route from OSRM (the shortest/default path).
-2. Computing the midpoint of the route.
-3. Finding danger zones within 2km of the midpoint.
-4. Generating **avoidance waypoints** — points pushed away from the average direction of nearby danger zones (~600m offset).
-5. If no danger zones are nearby, generating **perpendicular waypoints** — offset left and right from the midpoint, perpendicular to the route direction.
-6. Requesting 2 additional routes from OSRM that pass through these waypoints (from → waypoint → to).
-7. Deduplicating routes that are too similar (distance difference < 50m).
-
-This guarantees 2–3 meaningfully different routes regardless of the road network density.
-
-### 3. Leaflet Routing Machine Interfering with Custom Route Rendering
-
-**Problem:** LRM draws its own default route polylines on the map immediately when routes are found. Our code tried to remove these default layers and draw custom-colored ones (green/violet), but LRM doesn't reliably expose its internal `_layer` references. This caused:
-- Default dimmed routes rendering on top of our custom routes.
-- Inconsistent behavior where sometimes routes appeared and sometimes they didn't.
-- The default LRM itinerary panel appearing despite `show: false`.
-
-**Solution:** Removed Leaflet Routing Machine entirely. The app now calls the **OSRM API directly** via `fetch()`, decodes the returned polyline geometry manually, and draws routes using plain Leaflet `L.polyline()`. This gives us full control over rendering — no hidden layers, no default UI, no timing conflicts with async danger zone fetching.
-
-### 4. React Effect Re-running and Aborting Itself
-
-**Problem:** The `RoutingControl` component used `useCallback(onRouteSelect, [])` to stabilize the callback reference passed as a dependency to `useEffect`. However, the empty dependency array `[]` meant the callback was stale — it captured the initial render's `onRouteSelect` and never updated. Additionally, in React 18 Strict Mode, effects run twice in development, which combined with the `AbortController` pattern caused the first render's fetch to be aborted by the second render's cleanup.
-
-**Solution:** 
-- Replaced `useCallback` with a **ref pattern**: `const onRouteSelectRef = useRef(onRouteSelect)` updated on every render (`onRouteSelectRef.current = onRouteSelect`).
-- Removed `onRouteSelect` from the effect's dependency array — the effect now depends only on `[map, from, to]`.
-- The ref ensures the latest callback is always called without triggering effect re-runs.
-
-### 5. Danger Zone Markers Not Appearing
-
-**Problem:** In the LRM-based implementation, danger zones were fetched asynchronously inside the `routesfound` callback. By the time the async fetch completed, LRM had already rendered its default layers, and the component may have re-rendered (especially in Strict Mode), causing the `cancelledRef` to be `true` and silently skipping all rendering — including the skull markers.
-
-**Solution:** With the direct OSRM API approach, danger zones and the direct route are **fetched in parallel** using `Promise.all()`. There's no race condition with a third-party library's rendering pipeline. The abort logic uses a standard `AbortController` that only triggers on component unmount or when `from`/`to` change — not on callback reference changes.
-
-### 6. Supabase Row Level Security (RLS) Blocking All Reads
-
-**Problem:** After seeding the `danger_zones` and `police_stations` tables via the Supabase SQL Editor, the app still returned empty arrays — no danger zones appeared, no police stations were found by SOS. The SQL Editor inserts worked because it runs as the `postgres` superuser, but the app uses the `anon` key. Supabase enables **Row Level Security (RLS)** by default on new tables, and without an explicit policy granting `SELECT` access to the `anon` role, all reads return empty results (not an error — just `[]`).
-
-**How we diagnosed it:** We tested the Supabase REST API directly via `curl` using the same `anon` key the app uses. The `SELECT` returned `[]` even though data existed. A test `INSERT` via the API returned error code `42501` — `new row violates row-level security policy`, confirming RLS was active with no permissive policies.
-
-**Solution:** Added RLS policies to allow public read access on both tables. Run this in the Supabase SQL Editor:
-
-```sql
--- Allow public read access for danger_zones
-CREATE POLICY "Allow public read access" ON danger_zones
-  FOR SELECT USING (true);
-
--- Allow public read access for police_stations
-CREATE POLICY "Allow public read access" ON police_stations
-  FOR SELECT USING (true);
-```
-
-This grants `SELECT` permission to all roles (including `anon`) while keeping `INSERT`, `UPDATE`, and `DELETE` restricted. For production, you would scope write policies to authenticated users or admin roles.
-
-### 7. Geolocation Denied in Desktop/WSL Browsers
-
-**Problem:** The app relied on the browser's Geolocation API to set the starting point (`fromPos`). If geolocation was denied (common in WSL, desktop browsers without HTTPS, or when the user clicks "Block"), `fromPos` remained `null`. Since the `RoutingControl` component only mounts when both `fromPos` and `destination` are set, **no routes were ever rendered** — the routing logic never ran at all. There was no error, no fallback, just a silent failure.
-
-**Solution:** Added a fallback to Aluva coordinates (`10.1076, 76.3520`) when geolocation is denied or unavailable. The "From" field is pre-filled with "Aluva, Ernakulam, Kerala" so the user can see and change it. This ensures routing always works regardless of GPS availability.
+MIT

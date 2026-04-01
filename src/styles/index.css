@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  background-color: #09090B;
+  color: #ffffff;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container {
+  background: #09090B;
+}
+
+/* Glowing green effect on the safest route */
+.safest-route-glow {
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.7))
+          drop-shadow(0 0 20px rgba(34, 197, 94, 0.4));
+}
+
+/* Green-tinted marker for start point */
+.green-marker {
+  filter: hue-rotate(100deg) saturate(1.5) brightness(1.1);
+}
+
+/* Danger zone skull marker */
+.danger-skull-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* Violet-tinted marker */
+.violet-marker {
+  filter: hue-rotate(220deg) saturate(1.5) brightness(1.1);
+}
+
+/* Hide leaflet routing machine's default itinerary panel */
+.leaflet-routing-container {
+  display: none !important;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.25; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.4; transform: translateX(-50%) scale(1.08); }
+}

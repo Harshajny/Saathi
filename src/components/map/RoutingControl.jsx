@@ -28,6 +28,11 @@ function findShortestIndex(routes) {
   return bestIdx
 }
 
+/** Calculate walking time from distance (5 km/h average walking speed) */
+function walkingTimeSeconds(distanceMetres) {
+  return distanceMetres / (5000 / 3600) // 5 km/h = 1.389 m/s
+}
+
 function formatTime(seconds) {
   const mins = Math.round(seconds / 60)
   if (mins < 60) return `${mins} min`
@@ -287,11 +292,14 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
             // Show route info with danger count
             onRouteSelectRef.current({
               label: routeLabel,
-              time: formatTime(r.duration),
+              time: formatTime(walkingTimeSeconds(r.distance)),
               distance: formatDistance(r.distance),
               dangerCount,
               dangerZones: dangersPerRoute[i].map((z) => z.label),
               color: isSafest ? GREEN : isShortest ? VIOLET : VIOLET_DIM,
+              routeCoordinates: r.coordinates,
+              fromCoords: from,
+              toCoords: to,
             })
             // Swap skull markers to show this route's dangers
             showSkullsForRoute(i)
@@ -316,11 +324,14 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           showSkullsForRoute(safestIdx)
           onRouteSelectRef.current({
             label: 'Safest Route',
-            time: formatTime(allRoutes[safestIdx].duration),
+            time: formatTime(walkingTimeSeconds(allRoutes[safestIdx].distance)),
             distance: formatDistance(allRoutes[safestIdx].distance),
             dangerCount: dangersPerRoute[safestIdx].length,
             dangerZones: dangersPerRoute[safestIdx].map((z) => z.label),
             color: GREEN,
+            routeCoordinates: allRoutes[safestIdx].coordinates,
+            fromCoords: from,
+            toCoords: to,
           })
         }
 
@@ -339,11 +350,14 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
         // Auto-show safest route info
         onRouteSelectRef.current({
           label: 'Safest Route',
-          time: formatTime(allRoutes[safestIdx].duration),
+          time: formatTime(walkingTimeSeconds(allRoutes[safestIdx].distance)),
           distance: formatDistance(allRoutes[safestIdx].distance),
           dangerCount: dangersPerRoute[safestIdx].length,
           dangerZones: dangersPerRoute[safestIdx].map((z) => z.label),
           color: GREEN,
+          routeCoordinates: allRoutes[safestIdx].coordinates,
+          fromCoords: from,
+          toCoords: to,
         })
       } catch (err) {
         if (err.name !== 'AbortError') {

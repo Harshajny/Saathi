@@ -12,11 +12,13 @@ A women's safety application that provides real-time safe routing, instant SOS a
 - **Click any route** to see its estimated travel time and distance in the top-right corner.
 - **Danger zone markers (red skulls)** — Skull markers (💀) on the map for danger zones along the safest route. Click for label and radius details.
 - **Route legend** — Bottom-left overlay explaining what each color means.
+- **Navigate in Google Maps** — click the button on any selected route to open it in Google Maps with waypoints, following approximately the same path.
 
 ### SOS Emergency Button
 - One-tap SOS button in the header.
-- Finds the nearest police station from the Supabase database.
-- Shows station name, distance, and phone number for immediate contact.
+- Finds the nearest police station from the Supabase database (real OpenStreetMap data).
+- Shows station name, distance, and phone number.
+- **"Call Now" button** — uses `tel:` to open the phone dialer directly. Falls back to India's emergency number (112) if station phone is unavailable or no stations are found.
 
 ## Tech Stack
 
@@ -25,6 +27,7 @@ A women's safety application that provides real-time safe routing, instant SOS a
 - **Routing:** OSRM public API (pedestrian profile), called directly via `fetch`
 - **Geocoding:** Nominatim (OpenStreetMap) for forward and reverse geocoding
 - **Backend:** Supabase (PostgreSQL)
+- **Navigation:** Google Maps Directions URL with waypoint support
 
 ## Supabase Tables
 
@@ -70,14 +73,8 @@ A women's safety application that provides real-time safe routing, instant SOS a
 
 ## Seed Data Disclaimer
 
-The danger zone and police station data included in this project is **entirely fictional and for testing purposes only**. The coordinates are placed at approximate locations in Aluva, Ernakulam to simulate realistic routing scenarios, but:
-
-- **Danger zone labels** (e.g., "Aluva Railway Underpass - Poor Lighting") are invented. There is no actual crime or safety data behind them.
-- **Police station phone numbers** are made up. They follow the Kerala landline format but are not real contact numbers.
-
-**For production use**, real data should be sourced from:
-- **Danger zones:** State crime records, crowdsourced user reports, government open data portals (e.g., National Crime Records Bureau), or safety-focused APIs.
-- **Police stations:** Kerala Police official website, Google Maps/Places API, or government directory listings.
+- **Danger zones:** The danger zone data is **fictional and for testing purposes only**. The coordinates are placed at approximate locations in Aluva, Ernakulam to simulate realistic routing scenarios. Labels (e.g., "Aluva Railway Underpass - Poor Lighting") are invented with no actual crime or safety data behind them. For production use, real data should be sourced from state crime records, crowdsourced user reports, or government open data portals (e.g., National Crime Records Bureau).
+- **Police stations:** Sourced from OpenStreetMap (Nominatim) with real coordinates. Phone numbers default to "112" (India's national emergency number) where station-specific numbers are unavailable in OSM data.
 
 ## How Safe Routing Works
 

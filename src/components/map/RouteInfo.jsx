@@ -1,3 +1,23 @@
+function buildGoogleMapsUrl(fromCoords, toCoords, routeCoordinates) {
+  const coords = routeCoordinates || []
+  const waypoints = []
+
+  if (coords.length > 4) {
+    const step = Math.floor(coords.length / 4)
+    waypoints.push(coords[step])
+    waypoints.push(coords[step * 2])
+    waypoints.push(coords[step * 3])
+  }
+
+  let url = `https://www.google.com/maps/dir/${fromCoords.lat},${fromCoords.lng}`
+  waypoints.forEach((wp) => {
+    url += `/${wp.lat},${wp.lng}`
+  })
+  url += `/${toCoords.lat},${toCoords.lng}`
+
+  return url
+}
+
 export default function RouteInfo({ info, onShowSafest }) {
   const showResetButton = info.label !== 'Safest Route' && onShowSafest
 
@@ -13,6 +33,14 @@ export default function RouteInfo({ info, onShowSafest }) {
         </div>
         <div className="text-white text-base font-bold">{info.time}</div>
         <div className="text-zinc-400 text-xs">{info.distance}</div>
+        {info.routeCoordinates && (
+          <button
+            onClick={() => window.open(buildGoogleMapsUrl(info.fromCoords, info.toCoords, info.routeCoordinates), '_blank')}
+            className="mt-2 w-full px-2 py-1.5 rounded-md bg-blue-600/20 border border-blue-500/40 text-blue-400 text-xs font-semibold hover:bg-blue-600/30 transition-all"
+          >
+            Navigate in Google Maps
+          </button>
+        )}
         {showResetButton && (
           <button
             onClick={onShowSafest}
@@ -46,6 +74,15 @@ export default function RouteInfo({ info, onShowSafest }) {
           <div className="text-green-400 text-xs font-semibold flex items-center gap-1">
             <span>✓</span> No danger zones on this route
           </div>
+        )}
+
+        {info.routeCoordinates && (
+          <button
+            onClick={() => window.open(buildGoogleMapsUrl(info.fromCoords, info.toCoords, info.routeCoordinates), '_blank')}
+            className="mt-3 w-full px-3 py-2 rounded-md bg-blue-600/20 border border-blue-500/40 text-blue-400 text-xs font-semibold hover:bg-blue-600/30 transition-all"
+          >
+            Navigate in Google Maps
+          </button>
         )}
 
         {showResetButton && (

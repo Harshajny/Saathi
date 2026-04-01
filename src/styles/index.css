@@ -12,6 +12,12 @@ body {
 
 #root {
   min-height: 100vh;
+  transition: filter 0.3s ease;
+}
+
+#root.sos-blur {
+  filter: blur(6px);
+  pointer-events: none;
 }
 
 /* Leaflet overrides for dark theme */

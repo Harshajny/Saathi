@@ -4,12 +4,12 @@ import L from 'leaflet'
 import { fetchDangerZones, filterSafestRoute, getDangerZonesOnRoute } from '../../lib/dangerZones'
 import { haversineMetres } from '../../lib/geo'
 
-const GREEN = '#22C55E'
-const VIOLET = '#8B5CF6'
-const VIOLET_DIM = 'rgba(139,92,246,0.6)'
+const EMERALD = '#34D399'
+const AMBER = '#FBBF24'
+const SKY_DIM = 'rgba(14,165,233,0.5)'
 
 const dangerIcon = L.divIcon({
-  html: '<span style="font-size:20px;font-weight:bold;color:#EF4444;">✕</span>',
+  html: '<span style="font-size:20px;font-weight:bold;color:#F43F5E;">✕</span>',
   className: 'danger-marker',
   iconSize: [24, 24],
   iconAnchor: [12, 12],
@@ -28,9 +28,9 @@ function findShortestIndex(routes) {
   return bestIdx
 }
 
-/** Calculate walking time from distance (5 km/h average walking speed) */
+/** Calculate walking time from distance (4.5 km/h — Google Maps uses 4–4.54 km/h) */
 function walkingTimeSeconds(distanceMetres) {
-  return distanceMetres / (5000 / 3600) // 5 km/h = 1.389 m/s
+  return distanceMetres / (4500 / 3600) // 4.5 km/h = 1.25 m/s
 }
 
 function formatTime(seconds) {
@@ -184,8 +184,8 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           dangersPerRoute[routeIdx].forEach((zone) => {
             const marker = L.marker([zone.lat, zone.lng], { icon: dangerIcon })
             marker.bindPopup(
-              `<div style="color:#EF4444;font-weight:bold;">⚠ ${zone.label}</div>
-               <div style="color:#999;font-size:12px;">Danger radius: ${zone.radius_m}m</div>`
+              `<div style="color:#F43F5E;font-weight:bold;">⚠ ${zone.label}</div>
+               <div style="color:#94a3b8;font-size:12px;">Danger radius: ${zone.radius_m}m</div>`
             )
             dangerLayerRef.current.addLayer(marker)
           })
@@ -201,7 +201,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           routeLines.forEach(({ line, index, isSafest, isShortest, originalColor }) => {
             if (index === clickedIdx) {
               // Brighten clicked route
-              const activeColor = isSafest ? GREEN : isShortest ? VIOLET : originalColor
+              const activeColor = isSafest ? EMERALD : isShortest ? AMBER : originalColor
               line.setStyle({ color: activeColor, weight: 7, opacity: 1 })
               line.bringToFront()
             } else {
@@ -223,24 +223,36 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
         routeOrder.forEach((i) => {
           const r = allRoutes[i]
           const isSafest = i === safestIdx
-          const isShortest = i === shortestIdx && i !== safestIdx
+          const isShortest = i === shortestIdx
           const dangerCount = dangersPerRoute[i].length
 
-          let color = VIOLET_DIM
+          const isBoth = isSafest && isShortest
+
+          let color = SKY_DIM
           let weight = 5
           let opacity = 0.65
 
           if (isSafest) {
-            color = GREEN
+            color = EMERALD
             weight = 7
             opacity = 1
           } else if (isShortest) {
-            color = VIOLET
+            color = AMBER
             weight = 6
             opacity = 0.85
           }
 
           const latLngs = r.coordinates.map((c) => [c.lat, c.lng])
+
+          // If this route is both safest AND shortest, draw yellow underneath green
+          if (isBoth) {
+            const yellowLine = L.polyline(latLngs, {
+              color: AMBER, weight: 10, opacity: 0.7,
+              interactive: false,
+            })
+            layerGroupRef.current.addLayer(yellowLine)
+          }
+
           const line = L.polyline(latLngs, {
             color, weight, opacity,
             className: isSafest ? 'safest-route-glow' : '',
@@ -250,7 +262,8 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           routeLines.push({ line, index: i, isSafest, isShortest, originalColor: color })
 
           let routeLabel = 'Alternative'
-          if (isSafest) routeLabel = 'Safest Route'
+          if (isBoth) routeLabel = 'Safest & Shortest Route'
+          else if (isSafest) routeLabel = 'Safest Route'
           else if (isShortest) routeLabel = 'Shortest Route'
 
           line.on('click', () => {
@@ -263,7 +276,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
               distance: formatDistance(r.distance),
               dangerCount,
               dangerZones: dangersPerRoute[i].map((z) => z.label),
-              color: isSafest ? GREEN : isShortest ? VIOLET : VIOLET_DIM,
+              color: isSafest ? EMERALD : isShortest ? AMBER : SKY_DIM,
               routeCoordinates: r.coordinates,
               fromCoords: from,
               toCoords: to,
@@ -279,10 +292,10 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           // Restore original styles
           routeLines.forEach(({ line, isSafest, isShortest, originalColor }) => {
             if (isSafest) {
-              line.setStyle({ color: GREEN, weight: 7, opacity: 1 })
+              line.setStyle({ color: EMERALD, weight: 7, opacity: 1 })
               line.bringToFront()
             } else if (isShortest) {
-              line.setStyle({ color: VIOLET, weight: 6, opacity: 0.85 })
+              line.setStyle({ color: AMBER, weight: 6, opacity: 0.85 })
             } else {
               line.setStyle({ color: originalColor, weight: 5, opacity: 0.65 })
             }
@@ -294,7 +307,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
             distance: formatDistance(allRoutes[safestIdx].distance),
             dangerCount: dangersPerRoute[safestIdx].length,
             dangerZones: dangersPerRoute[safestIdx].map((z) => z.label),
-            color: GREEN,
+            color: EMERALD,
             routeCoordinates: allRoutes[safestIdx].coordinates,
             fromCoords: from,
             toCoords: to,
@@ -317,7 +330,7 @@ export default function RoutingControl({ from, to, onRouteSelect, resetRef }) {
           distance: formatDistance(allRoutes[safestIdx].distance),
           dangerCount: dangersPerRoute[safestIdx].length,
           dangerZones: dangersPerRoute[safestIdx].map((z) => z.label),
-          color: GREEN,
+          color: EMERALD,
           routeCoordinates: allRoutes[safestIdx].coordinates,
           fromCoords: from,
           toCoords: to,

@@ -1,12 +1,16 @@
 function buildGoogleMapsUrl(fromCoords, toCoords, routeCoordinates) {
   const coords = routeCoordinates || []
-  const waypoints = []
 
-  if (coords.length > 4) {
-    const step = Math.floor(coords.length / 4)
-    waypoints.push(coords[step])
-    waypoints.push(coords[step * 2])
-    waypoints.push(coords[step * 3])
+  // Use path-based format: /maps/dir/origin/wp1/wp2/.../destination
+  // The api=1 format does NOT support waypoints — only the path format does
+  const maxWaypoints = 8
+  const waypoints = []
+  if (coords.length > 2) {
+    const step = coords.length / (maxWaypoints + 1)
+    for (let i = 1; i <= maxWaypoints; i++) {
+      const idx = Math.min(Math.floor(step * i), coords.length - 1)
+      waypoints.push(coords[idx])
+    }
   }
 
   let url = `https://www.google.com/maps/dir/${fromCoords.lat},${fromCoords.lng}`
@@ -22,7 +26,7 @@ export default function RouteInfo({ info, onShowSafest }) {
   const showResetButton = info.label !== 'Safest Route' && onShowSafest
 
   return (
-    <div className="absolute top-28 right-4 z-[1000] bg-zinc-900/90 backdrop-blur-sm border border-zinc-700/50 rounded-lg text-sm
+    <div className="absolute top-28 right-4 z-[1000] bg-slate-950/90 backdrop-blur-sm border border-slate-700/50 rounded-lg text-sm
       px-3 py-2 min-w-[120px]
       md:px-4 md:py-3 md:min-w-[200px] md:max-w-[280px] md:top-32"
     >
@@ -32,11 +36,11 @@ export default function RouteInfo({ info, onShowSafest }) {
           {info.label}
         </div>
         <div className="text-white text-base font-bold">{info.time}</div>
-        <div className="text-zinc-400 text-xs">{info.distance}</div>
+        <div className="text-slate-400 text-xs">{info.distance}</div>
         {info.routeCoordinates && (
           <button
             onClick={() => window.open(buildGoogleMapsUrl(info.fromCoords, info.toCoords, info.routeCoordinates), '_blank')}
-            className="mt-2 w-full px-2 py-1.5 rounded-md bg-blue-600/20 border border-blue-500/40 text-blue-400 text-xs font-semibold hover:bg-blue-600/30 transition-all"
+            className="mt-2 w-full px-2 py-1.5 rounded-md bg-sky-600/20 border border-sky-500/40 text-sky-400 text-xs font-semibold hover:bg-sky-600/30 transition-all"
           >
             Navigate in Google Maps
           </button>
@@ -44,7 +48,7 @@ export default function RouteInfo({ info, onShowSafest }) {
         {showResetButton && (
           <button
             onClick={onShowSafest}
-            className="mt-2 w-full px-2 py-1.5 rounded-md bg-green-600/20 border border-green-500/40 text-green-400 text-xs font-semibold hover:bg-green-600/30 transition-all"
+            className="mt-2 w-full px-2 py-1.5 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs font-semibold hover:bg-emerald-600/30 transition-all"
           >
             Show Safe Route
           </button>
@@ -57,21 +61,21 @@ export default function RouteInfo({ info, onShowSafest }) {
           {info.label}
         </div>
         <div className="text-white text-lg font-bold">{info.time}</div>
-        <div className="text-zinc-400 text-xs mb-2">{info.distance}</div>
+        <div className="text-slate-400 text-xs mb-2">{info.distance}</div>
 
         {info.dangerCount > 0 ? (
           <div>
-            <div className="text-red-400 font-semibold text-xs flex items-center gap-1 mb-1">
+            <div className="text-rose-400 font-semibold text-xs flex items-center gap-1 mb-1">
               <span className="font-bold">✕</span> {info.dangerCount} danger zone{info.dangerCount !== 1 ? 's' : ''} nearby
             </div>
-            <ul className="text-zinc-500 text-xs space-y-0.5 max-h-32 overflow-y-auto">
+            <ul className="text-slate-500 text-xs space-y-0.5 max-h-32 overflow-y-auto">
               {info.dangerZones.map((name, i) => (
                 <li key={i} className="truncate">• {name}</li>
               ))}
             </ul>
           </div>
         ) : (
-          <div className="text-green-400 text-xs font-semibold flex items-center gap-1">
+          <div className="text-emerald-400 text-xs font-semibold flex items-center gap-1">
             <span>✓</span> No danger zones on this route
           </div>
         )}
@@ -79,7 +83,7 @@ export default function RouteInfo({ info, onShowSafest }) {
         {info.routeCoordinates && (
           <button
             onClick={() => window.open(buildGoogleMapsUrl(info.fromCoords, info.toCoords, info.routeCoordinates), '_blank')}
-            className="mt-3 w-full px-3 py-2 rounded-md bg-blue-600/20 border border-blue-500/40 text-blue-400 text-xs font-semibold hover:bg-blue-600/30 transition-all"
+            className="mt-3 w-full px-3 py-2 rounded-md bg-sky-600/20 border border-sky-500/40 text-sky-400 text-xs font-semibold hover:bg-sky-600/30 transition-all"
           >
             Navigate in Google Maps
           </button>
@@ -88,7 +92,7 @@ export default function RouteInfo({ info, onShowSafest }) {
         {showResetButton && (
           <button
             onClick={onShowSafest}
-            className="mt-3 w-full px-3 py-2 rounded-md bg-green-600/20 border border-green-500/40 text-green-400 text-xs font-semibold hover:bg-green-600/30 transition-all"
+            className="mt-3 w-full px-3 py-2 rounded-md bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 text-xs font-semibold hover:bg-emerald-600/30 transition-all"
           >
             Show Safe Route
           </button>
